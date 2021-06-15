@@ -39,7 +39,14 @@ class Job {
 */
 
 static async findAll(search = {}){
-    let query = 0;
+    let query = `SELECT j.id,
+    j.title,
+    j.salary,
+    j.equity,
+    j.company_handle,
+    c.name AS "companyName"
+FROM jobs j 
+LEFT JOIN companies AS c ON c.handle = j.company_handle ORDER BY title`;
     
     const {title, minSalary, hasEquity} = search;
 
@@ -52,9 +59,8 @@ static async findAll(search = {}){
                         j.company_handle,
                         c.name as "companyName"
                         FROM jobs j
-                        LEFT JOIN companies as c.handle = j.company_handle
-                        WHERE salary >= ${minSalary}
-                        RETURNING id,title, salary, equity, company_handle, companyName`
+                        LEFT JOIN companies as c on c.handle = j.company_handle
+                        WHERE salary >= ${minSalary} ORDER BY title`
     }        
 
     if(hasEquity === true){
@@ -65,9 +71,8 @@ static async findAll(search = {}){
                         j.company_handle,
                         c.name as "companyName"
                         FROM jobs j
-                        LEFT JOIN companies as c.handle = j.company_handle
-                        WHERE equity > 0
-                        RETURNING id,title, salary, equity, company_handle, companyName`
+                        LEFT JOIN companies as c on c.handle = j.company_handle
+                        WHERE equity > 0 ORDER BY title`
                     }
 
     if(title !== undefined){
@@ -78,9 +83,9 @@ static async findAll(search = {}){
                         j.company_handle,
                         c.name as "companyName"
                         FROM jobs j
-                        LEFT JOIN companies as c.handle = j.company_handle
-                        WHERE title  ILIKE ${title}
-                        RETURNING id,title, salary, equity, company_handle, companyName`
+                        LEFT JOIN companies as c on c.handle = j.company_handle
+                        WHERE title  ILIKE '%${title}%' ORDER BY title`
+                        
                     }
 
     const jobRes =  await db.query(query);
@@ -104,6 +109,19 @@ static async get(id){
      const job = jobRes.rows[0];
 
      if(!job) throw new NotFoundError(` No Job with id ${id}` )
+    
+     const companiesRes = await db.query(
+        `SELECT handle,
+                name,
+                description,
+                num_employees AS "numEmployees",
+                logo_url AS "logoUrl"
+         FROM companies
+         WHERE handle = $1`, [job.company_handle]);
+
+  delete job.company_handle;
+  job.company = companiesRes.rows[0];
+
 
      return job;
 }
@@ -152,15 +170,13 @@ static async update(id, data){
 
 static async remove(id){
     const result = await db.query(
-        `DELETE FROM jobs WHERE id=$1`,[id]
+        `DELETE FROM jobs WHERE id=$1
+        RETURNING id`,[id]
     );
-    const job = results.rows[0];
+    const job = result.rows[0];
 
     if(!job) throw new NotFoundError(`No Job found with id ${id}`)
 }
-
-
-
 
 
 }

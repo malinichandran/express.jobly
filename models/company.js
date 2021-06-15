@@ -50,7 +50,12 @@ class Company {
    * */
 
   static async findAll(search = {}) {
-    let query = 0;
+    let query =`SELECT handle,
+                        name,
+                        description,
+                        num_employees AS "numEmployees",
+                        logo_url AS "logoUrl"
+                 FROM companies`
 
     const { minEmployees, maxEmployees, name } = search;
 
@@ -86,7 +91,7 @@ class Company {
       FROM companies WHERE name ILIKE '%${name}%' ORDER BY name`
     }
     const companiesRes = await db.query(query);
-    console.log(companiesRes)
+  
     return companiesRes.rows;
   }
 
