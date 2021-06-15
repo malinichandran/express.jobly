@@ -78,3 +78,35 @@ describe("ensureLoggedIn", function () {
     ensureLoggedIn(req, res, next);
   });
 });
+
+describe("isAdmin", function(){
+  test("works", function(){
+    expect.assertions(1);
+    const req = {};
+    const res = { locals: {user: {username: "test", is_admin:True}}};
+    const next = function(err){
+      expect(err).toBeFalsy();
+    };
+    isAdmin(req, res, next);
+  });
+
+  test("if not admin", function(){
+    expect.assertions(1);
+    const req = {};
+    const res = { locals: {user: {username: "test", is_admin:False}}};
+    const next = function(err){
+      expect(err instanceof UnauthorizedError).toBeTruthy();
+    };
+   isAdmin(req, res, next);
+  });
+
+  test("if anonymous", function(){
+    expect.assertions(1);
+    const req = {};
+    const res = {locals: {}};
+    const next = function(err){
+      expect(err instanceof UnauthorizedError).toBeTruthy();
+    }
+    isAdmin(req, res, next);
+  });
+});

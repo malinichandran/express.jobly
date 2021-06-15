@@ -11,6 +11,7 @@ const {
   commonAfterEach,
   commonAfterAll,
   u1Token,
+  adminToken
 } = require("./_testCommon");
 
 beforeAll(commonBeforeAll);
@@ -29,15 +30,23 @@ describe("POST /companies", function () {
     numEmployees: 10,
   };
 
-  test("ok for users", async function () {
+  test("ok for admin", async function () {
     const resp = await request(app)
         .post("/companies")
         .send(newCompany)
-        .set("authorization", `Bearer ${u1Token}`);
+        .set("authorization", `Bearer ${adminToken}`);
     expect(resp.statusCode).toEqual(201);
     expect(resp.body).toEqual({
       company: newCompany,
     });
+  });
+
+  test("unauth for non-admin", async function(){
+    const resp = await request(app)
+        .post("/companies")
+        .send(newCompany)
+        .set("authorization", `Bearer ${adminToken}`);
+    expect(resp.statusCode).toEqual(401);
   });
 
   test("bad request with missing data", async function () {
@@ -96,15 +105,46 @@ describe("GET /companies", function () {
     });
   });
 
-  test("fails: test next() handler", async function () {
-    // there's no normal failure event which will cause this route to fail ---
-    // thus making it hard to test that the error-handler works with it. This
-    // should cause an error, all right :)
-    await db.query("DROP TABLE companies CASCADE");
+  test(" search filters", async function(){
+    const resp = await request(app)
+                .get("/companies")
+                .query({ minEmployees: 3});
+    expect(resp.body).toEqual({
+      companies:[
+        {
+          handle: "c3",
+          name: "C3",
+          description: "Desc3",
+          numEmployees: 3,
+          logoUrl: "http://c3.img" 
+        }
+      ]
+    });
+  });
+
+  test("all filters", async function(){
+    const resp = await request(app)
+                  .get("/companies")
+                  .query({ minEmployees:2, maxEmployees:3, name: "3"});
+    expect(resp.body).toEqual({
+      companies:[
+        {
+          handle: "c3",
+          name: "C3",
+          description: "Desc3",
+          numEmployees: 3,
+          logoUrl: "http://c3.img" 
+        },
+      ],
+    });              
+  });
+
+  test("bad request", async function () {
+    
     const resp = await request(app)
         .get("/companies")
-        .set("authorization", `Bearer ${u1Token}`);
-    expect(resp.statusCode).toEqual(500);
+        .query({minEmployees:2, noexist:"noexist"});
+    expect(resp.statusCode).toEqual(400);
   });
 });
 
