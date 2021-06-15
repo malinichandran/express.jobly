@@ -78,6 +78,8 @@ router.get("/:username", ensureCorrectUserOrAdmin, async function (req, res, nex
 });
 
 
+
+
 /** PATCH /[username] { user } => { user }
  *
  * Data can include:
@@ -118,5 +120,21 @@ router.delete("/:username", ensureCorrectUserOrAdmin, async function (req, res, 
   }
 });
 
+/**********POST /users/username/jobs/[id] 
+ * 
+ * Returns {"applied" :jobId}
+ * 
+ * Authorization required: admin or same user
+ * 
+*/
+router.post("/username/jobs/:id", ensureCorrectUserOrAdmin, async function( req, res, next){
+  try{
+    const jobId = Number(req.params.id)
+    await User.applyToJob(req.params.username, jobId)
+    return res.json({applied : jobId});
+  }catch(err){
+    return next(err);
+  }
+});
 
 module.exports = router;

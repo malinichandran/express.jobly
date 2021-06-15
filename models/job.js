@@ -29,8 +29,13 @@ class Job {
 
 
 /** FInd all jobs  
+ * searchFilters (all optional):
+   * - minSalary
+   * - hasEquity (true returns only jobs with equity > 0, other values ignored)
+   * - title (will find case-insensitive, partial matches)
+   *
+   * Returns [{ id, title, salary, equity, companyHandle, companyName }, ...]
  * 
- * Returns [{id, title, salary, equity, company_handle }]
 */
 
 static async findAll(search = {}){
@@ -38,12 +43,49 @@ static async findAll(search = {}){
     
     const {title, minSalary, hasEquity} = search;
 
-    
-    const res = await db.query(`
-                SELECT * FROM jobs
-                RETURNING id, title,, salary, equity, company_handle`)
 
-    return res.rows;
+    if(minSalary !== undefined){
+        query = `SELECT j.id,
+                        j.title,
+                        j.salary,
+                        j.equity,
+                        j.company_handle,
+                        c.name as "companyName"
+                        FROM jobs j
+                        LEFT JOIN companies as c.handle = j.company_handle
+                        WHERE salary >= ${minSalary}
+                        RETURNING id,title, salary, equity, company_handle, companyName`
+    }        
+
+    if(hasEquity === true){
+        query = `SELECT j.id,
+                        j.title,
+                        j.salary,
+                        j.equity,
+                        j.company_handle,
+                        c.name as "companyName"
+                        FROM jobs j
+                        LEFT JOIN companies as c.handle = j.company_handle
+                        WHERE equity > 0
+                        RETURNING id,title, salary, equity, company_handle, companyName`
+                    }
+
+    if(title !== undefined){
+        query = `SELECT j.id,
+                        j.title,
+                        j.salary,
+                        j.equity,
+                        j.company_handle,
+                        c.name as "companyName"
+                        FROM jobs j
+                        LEFT JOIN companies as c.handle = j.company_handle
+                        WHERE title  ILIKE ${title}
+                        RETURNING id,title, salary, equity, company_handle, companyName`
+                    }
+
+    const jobRes =  await db.query(query);
+    console.log(jobRes)
+    return jobRes.rows;
 }
 
 /**Given a job id return data about job.
