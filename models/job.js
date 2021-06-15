@@ -165,4 +165,4 @@ static async remove(id){
 
 }
 
-module.exports = Company;
+module.exports = Job;

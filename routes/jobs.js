@@ -13,7 +13,9 @@ const jobNewSchema = require("../schemas/jobNew.json");
 const jobSearchSchema = require("../schemas/jobSearch.json");
 const jobUpdateSchema = require("../schemas/jobUpdate.json")
 
-const router = new express.Router();
+const router = express.Router({ mergeParams: true });
+
+
 
 /******* POST/ {job} => {job}
  * 
@@ -51,7 +53,7 @@ const router = new express.Router();
  */
  router.get("/", async function(req, res, next){
      const search = req.query;
-
+   
      if(search.minSalary !== undefined){
         search.minSalary = Number(search.minSalary);
      }
@@ -80,7 +82,7 @@ const router = new express.Router();
  router.get("/:id", async function(req, res, next){
      try{
         const job = await Job.get(req.params.id);
-        return res.json({ id });
+        return res.json({ job });
      }catch(err){
          return next(err);
      }
